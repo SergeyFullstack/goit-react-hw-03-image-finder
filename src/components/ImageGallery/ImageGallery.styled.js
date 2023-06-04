@@ -13,6 +13,6 @@ export const GalleryList = styled.ul`
   margin-right: auto;
 `;
 
-export const WrapGallary = styled.div`
+export const WrapGallery = styled.div`
   padding: 20px 0 40px 0;
 `;
