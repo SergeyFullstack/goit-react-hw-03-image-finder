@@ -3,10 +3,9 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Searchbar } from './Searchbar/Searchbar';
 import { fetchImages } from 'api/fetch-api-gallery';
 import { Loader } from './Loader/Loader';
-import { createRef } from 'react';
+import { Modal } from 'components/Modal/Modal';
 
 export class App extends Component {
-  galleryRef = createRef();
   state = {
     searchName: '',
     dataImages: [],
@@ -21,20 +20,17 @@ export class App extends Component {
   componentDidUpdate(_, prevState) {
     const { searchName, page } = this.state;
 
-    if (searchName === '') return;
-    else if (prevState.searchName !== searchName || prevState.page !== page) {
-      this.setState({
-        dataImages: [],
-        toggleLoader: true,
-        toggleButton: false,
-      });
-
+    if (prevState.searchName !== searchName || prevState.page !== page) {
       this.getGallery();
     }
   }
 
   onSubmitSearch = searchName => {
-    this.setState({ searchName });
+    this.setState({
+      searchName,
+      dataImages: [],
+      page: 1,
+    });
   };
 
   getGallery = () => {
@@ -51,17 +47,10 @@ export class App extends Component {
 
         const newDataImages = [...dataImages, ...images.hits];
 
-        if (Math.ceil(images.total / 12) <= page) {
-          this.setState({ toggleButton: false });
-        } else {
-          this.setState({ toggleButton: true });
-        }
-
         this.setState({
           dataImages: newDataImages,
+          toggleButton: Math.ceil(images.total / 12) <= page ? false : true,
         });
-
-        this.scrollToBottom();
       })
       .catch(error => console.log(error))
       .finally(() => {
@@ -69,23 +58,11 @@ export class App extends Component {
       });
   };
 
-  scrollToBottom = () => {
-    this.galleryRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    });
-  };
-
   clickLoadMore = () => {
-    this.setState(
-      prevState => ({
-        page: prevState.page + 1,
-        toggleLoader: true,
-      }),
-      () => {
-        this.getGallery();
-      }
-    );
+    this.setState(prevState => ({
+      page: prevState.page + 1,
+      toggleLoader: true,
+    }));
   };
 
   modalOpen = curentImage => {
@@ -106,7 +83,6 @@ export class App extends Component {
 
   render() {
     const {
-      searchName,
       dataImages,
       toggleLoader,
       toggleButton,
@@ -119,23 +95,21 @@ export class App extends Component {
       <>
         <Searchbar onSubmit={this.onSubmitSearch} />
         {toggleLoader && <Loader widthLoader={'200'} heightLoader={'200'} />}
-        <div ref={this.galleryRef}>
-          <ImageGallery
-            searchName={searchName}
-            dataImages={dataImages}
-            toggleLoader={toggleLoader}
-            toggleButton={toggleButton}
-            toggleModal={toggleModal}
-            largeImageUrl={largeImageUrl}
-            largeImageAlt={largeImageAlt}
-            getGallery={this.getGallery}
-            clickLoadMore={this.clickLoadMore}
-            modalOpen={this.modalOpen}
+        <ImageGallery
+          dataImages={dataImages}
+          toggleButton={toggleButton}
+          toggleLoader={toggleLoader}
+          clickLoadMore={this.clickLoadMore}
+          modalOpen={this.modalOpen}
+        />
+        {toggleModal && (
+          <Modal
+            url={largeImageUrl}
+            alt={largeImageAlt}
             closeModal={this.closeModal}
           />
-        </div>
+        )}
       </>
     );
   }
 }
-
